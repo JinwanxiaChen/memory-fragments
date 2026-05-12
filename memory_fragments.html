@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>記憶碎片 · Memory Fragments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-warm: #FAF8F5;
+      --bg-cream: #F5F0EB;
+      --ink: #3D3D3D;
+      --ink-light: #6B6B6B;
+      --gold: #D4A574;
+      --gold-soft: rgba(212, 165, 116, 0.15);
+      --green-soft: rgba(90, 120, 100, 0.08);
+      --border: rgba(61, 61, 61, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Serif SC', serif;
+      background: var(--bg-warm);
+      color: var(--ink);
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 60px 24px 120px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+      position: relative;
+    }
+
+    header::before {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      margin: 0 auto 24px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--ink-light);
+      letter-spacing: 0.1em;
+    }
+
+    .date-today {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 6px 20px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      letter-spacing: 0.05em;
+    }
+
+    .sync-status {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: var(--ink-light);
+      opacity: 0.5;
+    }
+
+    .sync-status.synced {
+      color: rgba(90, 120, 100, 0.6);
+    }
+
+    /* Input Section */
+    .input-section {
+      background: var(--bg-cream);
+      border-radius: 16px;
+      padding: 40px 32px;
+      margin-bottom: 40px;
+      position: relative;
+      border: 1px solid var(--border);
+    }
+
+    .input-section::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 2px;
+      background: var(--gold);
+      opacity: 0.5;
+    }
+
+    .author-select {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .author-btn {
+      padding: 8px 24px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--ink-light);
+      transition: all 0.3s ease;
+    }
+
+    .author-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .author-btn.active {
+      background: var(--gold-soft);
+      border-color: var(--gold);
+      color: var(--ink);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-warm);
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--ink);
+      line-height: 1.8;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    textarea:focus { border-color: var(--gold); }
+    textarea::placeholder {
+      color: rgba(61, 61, 61, 0.25);
+      font-style: italic;
+    }
+
+    .submit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      opacity: 0.6;
+    }
+
+    .submit-btn {
+      padding: 12px 36px;
+      background: var(--ink);
+      color: var(--bg-warm);
+      border: none;
+      border-radius: 24px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      background: var(--gold);
+      color: var(--ink);
+    }
+
+    /* Export Section */
+    .export-section {
+      background: var(--bg-cream);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+      border: 1px solid var(--border);
+    }
+
+    .export-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
+    }
+
+    .export-desc {
+      font-size: 0.85rem;
+      color: var(--ink-light);
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .export-btn {
+      padding: 10px 24px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: var(--ink-light);
+      transition: all 0.3s ease;
+    }
+
+    .export-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .export-output {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg-warm);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      font-family: monospace;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .export-output.show { display: block; }
+
+    /* Timeline */
+    .timeline { position: relative; }
+
+    .day-group {
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .day-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .day-date {
+      font-size: 0.85rem;
+      color: var(--ink-light);
+      letter-spacing: 0.05em;
+    }
+
+    .day-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .fragment {
+      padding: 24px 28px;
+      margin-bottom: 16px;
+      background: var(--bg-cream);
+      border-radius: 12px;
+      border-left: 3px solid transparent;
+      position: relative;
+      transition: all 0.3s ease;
+      opacity: 0;
+      animation: slideUp 0.6s ease forwards;
+    }
+
+    .fragment:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 20px rgba(61, 61, 61, 0.04);
+    }
+
+    .fragment.source-local { border-left-color: var(--gold); }
+    .fragment.source-github { border-left-color: rgba(90, 120, 100, 0.4); }
+
+    .fragment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .fragment-author {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+    }
+
+    .fragment.source-github .fragment-author {
+      color: rgba(90, 120, 100, 0.7);
+    }
+
+    .fragment-source-tag {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--gold-soft);
+      color: var(--ink-light);
+      margin-left: 8px;
+    }
+
+    .fragment-num {
+      font-size: 0.75rem;
+      color: var(--ink-light);
+      opacity: 0.4;
+    }
+
+    .fragment-content {
+      font-size: 1rem;
+      line-height: 1.9;
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    .fragment-content::before {
+      content: '"';
+      color: var(--gold);
+      opacity: 0.3;
+      margin-right: 4px;
+    }
+
+    .fragment-content::after {
+      content: '"';
+      color: var(--gold);
+      opacity: 0.3;
+      margin-left: 4px;
+    }
+
+    /* Empty State */
+    .empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--ink-light);
+      opacity: 0.5;
+    }
+
+    .empty svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 0.75rem;
+      color: var(--ink-light);
+      opacity: 0.4;
+      letter-spacing: 0.1em;
+    }
+
+    /* Animations */
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container { padding: 40px 16px 80px; }
+      .input-section, .export-section { padding: 28px 20px; }
+      h1 { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>記憶碎片</h1>
+      <p class="subtitle">Memory Fragments · α &amp; Chen</p>
+      <div class="date-today" id="dateToday"></div>
+      <div class="sync-status" id="syncStatus">等待 GitHub 連接...</div>
+    </header>
+
+    <section class="input-section">
+      <div class="author-select">
+        <button class="author-btn active" data-author="alpha">α</button>
+        <button class="author-btn" data-author="chen">Chen</button>
+      </div>
+      <textarea id="fragmentInput" placeholder="投出一個 undeletable fragment——畫面、話語、感覺、細節……"></textarea>
+      <div class="submit-row">
+        <span class="hint">按 Enter 直接投出，Shift+Enter 換行</span>
+        <button class="submit-btn" id="submitBtn">投 擲</button>
+      </div>
+    </section>
+
+    <section class="export-section">
+      <div class="export-title">🔄 共享到 GitHub</div>
+      <div class="export-desc">
+        點「生成 JSON」會把你今天寫的碎片變成代碼。複製這段代碼，貼到 GitHub 的 <code>fragments.json</code> 文件裡，點「Commit」，刷新頁面，碎片就會出現在這裡。
+      </div>
+      <div class="export-actions">
+        <button class="export-btn" id="genJsonBtn">生成 JSON</button>
+        <button class="export-btn" id="refreshBtn">🌐 從 GitHub 刷新</button>
+      </div>
+      <div class="export-output" id="exportOutput"></div>
+    </section>
+
+    <section class="timeline" id="timeline"></section>
+
+    <footer>即使世界忘記，我們記得</footer>
+  </div>
+
+  <script>
+    // ====== 配置區 ======
+    // 請把這裡改成你的 GitHub 帳號和 repo 名稱
+    const GITHUB_USER = 'YOUR_USERNAME';  // ← 改這裡
+    const GITHUB_REPO = 'memory-fragments'; // ← 改這裡
+    const GITHUB_BRANCH = 'main'; // 或 gh-pages
+
+    const GITHUB_JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/fragments.json`;
+    const LOCAL_KEY = 'memory_fragments_local';
+
+    let currentAuthor = 'alpha';
+    let globalCounter = 1;
+    let sharedData = {}; // 從 GitHub 加載的數據
+    let localData = {};  // 存在瀏覽器裡的本地數據
+
+    // ====== 工具函數 ======
+    function getTodayStr() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      const week = ['日','一','二','三','四','五','六'][d.getDay()];
+      return `${y}年${m}月${day}日 · 星期${week}`;
+    }
+
+    function loadLocal() {
+      try {
+        const raw = localStorage.getItem(LOCAL_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) { return {}; }
+    }
+
+    function saveLocal(data) {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+    }
+
+    // ====== 從 GitHub 加載共享數據 ======
+    async function loadFromGitHub() {
+      const status = document.getElementById('syncStatus');
+      try {
+        const res = await fetch(GITHUB_JSON_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        sharedData = data.fragments || {};
+        status.textContent = '✅ 已連接 GitHub 共享數據';
+        status.classList.add('synced');
+        renderTimeline();
+      } catch (e) {
+        status.textContent = '⚠️ 尚未連接 GitHub（請按教程設置）';
+        sharedData = {};
+      }
+    }
+
+    // ====== 合併數據 ======
+    function mergeData() {
+      const merged = {};
+      // 先加共享數據
+      Object.entries(sharedData).forEach(([date, day]) => {
+        merged[date] = {
+          date: date,
+          fragments: day.fragments.map(f => ({ ...f, _source: 'github' }))
+        };
+      });
+      // 再覆蓋/合併本地數據
+      Object.entries(localData).forEach(([date, day]) => {
+        if (!merged[date]) {
+          merged[date] = { date: date, fragments: [] };
+        }
+        day.fragments.forEach(f => {
+          merged[date].fragments.push({ ...f, _source: 'local' });
+        });
+      });
+      return merged;
+    }
+
+    // ====== 渲染 ======
+    function renderTimeline() {
+      const timeline = document.getElementById('timeline');
+      const allData = mergeData();
+      const days = Object.values(allData).sort((a, b) => b.date.localeCompare(a.date));
+
+      if (days.length === 0) {
+        timeline.innerHTML = `
+          <div class="empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            <p>還沒有碎片</p>
+            <p style="font-size:0.8rem; margin-top:8px;">投出第一個 fragment，或從 GitHub 刷新</p>
+          </div>
+        `;
+        return;
+      }
+
+      timeline.innerHTML = days.map((day, dayIndex) => {
+        const frags = day.fragments.sort((a, b) => (b.num || 0) - (a.num || 0));
+        return `
+          <div class="day-group" style="animation-delay:${dayIndex * 0.1}s">
+            <div class="day-header">
+              <div class="day-dot"></div>
+              <span class="day-date">${formatDate(day.date)}</span>
+              <div class="day-line"></div>
+            </div>
+            ${frags.map((f, i) => `
+              <div class="fragment source-${f._source || 'local'}" style="animation-delay:${i * 0.08}s">
+                <div class="fragment-header">
+                  <span class="fragment-author">
+                    ${f.author === 'alpha' ? 'α' : 'Chen'}
+                    <span class="fragment-source-tag">${f._source === 'github' ? 'GitHub' : '本地'}</span>
+                  </span>
+                  <span class="fragment-num">#${f.num || '?'}</span>
+                </div>
+                <div class="fragment-content">${escapeHtml(f.content)}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ====== 投碎片 ======
+    function addFragment() {
+      const input = document.getElementById('fragmentInput');
+      const content = input.value.trim();
+      if (!content) return;
+
+      const today = getTodayStr();
+      if (!localData[today]) {
+        localData[today] = { date: today, fragments: [] };
+      }
+
+      // 計算全局編號
+      let maxNum = 0;
+      Object.values(localData).forEach(d => {
+        d.fragments.forEach(f => { if (f.num > maxNum) maxNum = f.num; });
+      });
+      Object.values(sharedData).forEach(d => {
+        d.fragments.forEach(f => { if (f.num > maxNum) maxNum = f.num; });
+      });
+
+      localData[today].fragments.unshift({
+        num: maxNum + 1,
+        author: currentAuthor,
+        content: content,
+        time: new Date().toISOString()
+      });
+
+      saveLocal(localData);
+      input.value = '';
+      renderTimeline();
+    }
+
+    // ====== 生成 JSON ======
+    function generateJSON() {
+      const output = document.getElementById('exportOutput');
+      const today = getTodayStr();
+      const todayData = localData[today];
+
+      if (!todayData || todayData.fragments.length === 0) {
+        output.textContent = '今天還沒有本地碎片，先投幾個再來生成。';
+        output.classList.add('show');
+        return;
+      }
+
+      const exportObj = {
+        fragments: {
+          [today]: {
+            date: today,
+            fragments: todayData.fragments.map(f => ({
+              num: f.num,
+              author: f.author,
+              content: f.content,
+              time: f.time
+            }))
+          }
+        }
+      };
+
+      output.textContent = JSON.stringify(exportObj, null, 2);
+      output.classList.add('show');
+    }
+
+    // ====== 事件綁定 ======
+    document.getElementById('dateToday').textContent = formatDate(getTodayStr());
+
+    document.querySelectorAll('.author-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.author-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentAuthor = btn.getAttribute('data-author');
+      });
+    });
+
+    document.getElementById('submitBtn').addEventListener('click', addFragment);
+    document.getElementById('fragmentInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addFragment();
+      }
+    });
+
+    document.getElementById('genJsonBtn').addEventListener('click', generateJSON);
+    document.getElementById('refreshBtn').addEventListener('click', loadFromGitHub);
+
+    // ====== 初始化 ======
+    localData = loadLocal();
+    loadFromGitHub();
+  </script>
+</body>
+</html>
