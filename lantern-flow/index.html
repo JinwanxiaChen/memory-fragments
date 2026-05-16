@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>燈籠心流</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+    background: #0f0f1a;
+    color: #e8e6e1;
+    position: relative;
+  }
+  .scene {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; opacity: 0; transition: opacity 1.2s ease;
+    overflow: hidden;
+  }
+  .scene.active { display: flex; opacity: 1; }
+  .scene.fade-in { opacity: 1; }
+
+  /* ===== 墨跡暈開轉場 ===== */
+  .ink-transition {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 9999; opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .ink-transition.active { opacity: 1; }
+  .ink-blot {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,20,35,0.98) 0%, rgba(15,15,26,0.95) 40%, transparent 70%);
+    transform: scale(0); transition: transform 6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .ink-blot.expand { transform: scale(20); }
+  .ink-blot-1 { width: 80px; height: 80px; top: 40%; left: 30%; }
+  .ink-blot-2 { width: 60px; height: 60px; top: 55%; left: 60%; transition-delay: 0.8s; }
+  .ink-blot-3 { width: 100px; height: 100px; top: 30%; left: 50%; transition-delay: 1.5s; }
+
+  /* 首页 */
+  #scene-home {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, #1a1a2e 0%, #0f0f1a 70%);
+  }
+  .home-title {
+    font-size: 42px; font-weight: 300; letter-spacing: 8px;
+    background: linear-gradient(180deg, #f5e6a3, #d4a574);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 16px;
+    animation: breathe 4s ease-in-out infinite;
+  }
+  .home-subtitle {
+    font-size: 15px; color: #8a8a9a; letter-spacing: 2px;
+    margin-bottom: 60px; font-weight: 300;
+  }
+  .enter-btn {
+    background: transparent; border: 1px solid rgba(245,230,163,0.4);
+    color: #f5e6a3; padding: 14px 40px; font-size: 16px;
+    letter-spacing: 4px; border-radius: 30px; cursor: pointer;
+    transition: all 0.5s; position: relative; overflow: hidden;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  .enter-btn:hover {
+    background: rgba(245,230,163,0.1); border-color: rgba(245,230,163,0.8);
+    transform: scale(1.05); box-shadow: 0 0 30px rgba(245,230,163,0.2);
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(245,230,163,0.1); }
+    50% { box-shadow: 0 0 30px rgba(245,230,163,0.25); }
+  }
+
+  /* ===== 門與詩句 - 手繪質感 ===== */
+  #scene-door {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #1e1e32 0%, #0a0a14 80%);
+    cursor: pointer;
+  }
+  .door-container {
+    position: relative; width: 200px; height: 300px;
+    margin-bottom: 40px; perspective: 800px;
+  }
+  /* 手繪風門框 - 不規則邊緣 */
+  .door-frame {
+    position: absolute; width: 100%; height: 100%;
+    border: 3px solid #3a3a50;
+    border-radius: 2px 5px 3px 4px;
+    background: #0a0a12;
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5);
+    /* 手繪質感：輕微不規則邊緣用 border-radius 實現，兼容 iOS */
+  }
+  .door-light {
+    position: absolute; top: -20%; left: 30%; width: 70%; height: 140%;
+    background: radial-gradient(ellipse, rgba(255,220,140,0.35) 0%, rgba(255,200,100,0.1) 50%, transparent 70%);
+    filter: blur(20px); opacity: 0.9;
+    animation: light-flicker 5s ease-in-out infinite;
+  }
+  .door-light::after {
+    content: ''; position: absolute; top: 10%; left: 10%; width: 80%; height: 80%;
+    background: radial-gradient(ellipse, rgba(255,230,160,0.2) 0%, transparent 60%);
+    filter: blur(30px);
+  }
+  @keyframes light-flicker {
+    0%, 100% { opacity: 0.85; }
+    33% { opacity: 0.95; }
+    66% { opacity: 0.75; }
+  }
+  /* 門板 - 打開速度放慢到 3.5s */
+  .door-panel {
+    position: absolute; top: 0; right: 0; width: 60%; height: 100%;
+    background: linear-gradient(90deg, #1a1a28, #232336);
+    border-left: 3px solid #3a3a55;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.4);
+    transform-origin: right center;
+    transform: rotateY(-35deg);
+    transition: transform 3.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 2s ease 1.5s;
+  }
+  .door-panel.open { transform: rotateY(-95deg); }
+  .door-panel.fade-out { opacity: 0; }
+  /* 手繪門把 */
+  .door-knob {
+    position: absolute; left: 18%; top: 50%;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c0b080, #8a7a50);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset -1px -1px 2px rgba(0,0,0,0.3);
+    transform: translateY(-50%);
+  }
+  /* 門板上的手繪紋理線 */
+  .door-panel::before {
+    content: ''; position: absolute; top: 20%; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  }
+  .door-panel::after {
+    content: ''; position: absolute; top: 60%; left: 15%; right: 15%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  }
+  .poem-text {
+    text-align: center; font-size: 17px; line-height: 2.2;
+    color: #c8c0b0; letter-spacing: 1px; max-width: 320px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 2s ease, transform 2s ease;
+  }
+  .poem-text.visible { opacity: 1; transform: translateY(0); }
+  .poem-author { color: #a09070; font-size: 14px; margin-top: 8px; }
+  .poem-text.fade-out { opacity: 0; }
+  .click-hint {
+    position: absolute; bottom: 40px; font-size: 12px; color: #555;
+    letter-spacing: 2px; animation: blink 2s infinite; transition: opacity 0.8s;
+  }
+  .click-hint.fade-out { opacity: 0; }
+  @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+
+  /* 选择场景 */
+  #scene-choose {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #151525 0%, #080810 80%);
+  }
+  .choose-question {
+    font-size: 22px; color: #f5e6a3; letter-spacing: 4px; margin-bottom: 50px;
+    text-align: center;
+  }
+  .typewriter-text {
+    text-align: center; font-size: 22px; color: #f5e6a3;
+    letter-spacing: 4px; line-height: 1.8;
+  }
+  .typewriter-text .char {
+    opacity: 0; transition: opacity 0.05s;
+  }
+  .typewriter-text .char.visible {
+    opacity: 1;
+  }
+  .paths-container {
+    position: relative; width: 340px; height: 200px; margin-bottom: 30px;
+  }
+  .path-left, .path-right {
+    position: absolute; bottom: 0; width: 140px; height: 180px;
+    cursor: pointer; transition: all 0.5s;
+  }
+  .path-left { left: 10px; }
+  .path-right { right: 10px; }
+  .path-svg {
+    position: absolute; bottom: 0; width: 100%; height: 100%;
+    opacity: 0.6; transition: opacity 0.5s;
+  }
+  .path-left:hover .path-svg, .path-right:hover .path-svg { opacity: 1; }
+  .path-left:hover { transform: translateX(-5px); }
+  .path-right:hover { transform: translateX(5px); }
+  .path-label {
+    position: absolute; bottom: -30px; width: 100%; text-align: center;
+    font-size: 14px; color: #a0a0b0; letter-spacing: 2px;
+  }
+  .path-poem {
+    text-align: center; font-size: 15px; line-height: 2;
+    color: #9a9aaa; margin-bottom: 40px; max-width: 280px;
+    opacity: 0; transition: opacity 1.5s ease 0.5s;
+  }
+  .path-poem.visible { opacity: 1; }
+
+  /* ===== 日記本選擇 - 精美設計 ===== */
+  #scene-diary-select, #scene-diary-write, #scene-diary-save {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #151528 0%, #080812 80%);
+  }
+  .diary-intro {
+    font-size: 16px; line-height: 2; color: #c0c0d0;
+    text-align: center; max-width: 340px; margin-bottom: 40px;
+  }
+  .diary-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+    max-width: 340px;
+  }
+  .diary-item {
+    width: 150px; height: 200px; border-radius: 8px;
+    cursor: pointer; position: relative; transition: all 0.4s;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .diary-item:hover {
+    transform: translateY(-10px) scale(1.04);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+  }
+  .diary-item.selected {
+    transform: scale(1.08);
+    box-shadow: 0 0 40px rgba(245,230,163,0.35);
+  }
+  /* 封面裝飾層 */
+  .diary-cover {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .diary-border {
+    position: absolute; inset: 6px; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px;
+  }
+  .diary-corner {
+    position: absolute; width: 12px; height: 12px; border-color: rgba(255,255,255,0.3); border-style: solid;
+  }
+  .diary-corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+  .diary-corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+  .diary-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+  .diary-corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+  /* 藍色海洋 */
+  .diary-ocean {
+    background: linear-gradient(160deg, #1e3d5f 0%, #0f2847 40%, #0a1f3a 100%);
+    border: 1px solid #2a6090;
+  }
+  .diary-ocean .diary-icon {
+    font-size: 40px; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+  .diary-ocean .diary-title {
+    font-size: 13px; color: rgba(180,220,255,0.9); letter-spacing: 3px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .diary-ocean .wave {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 35%;
+    background: linear-gradient(180deg, transparent, rgba(60,140,200,0.25));
+  }
+  .diary-ocean .wave::before, .diary-ocean .wave::after {
+    content: ''; position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 2px; background: rgba(100,180,255,0.3); border-radius: 1px;
+  }
+  .diary-ocean .wave::after { bottom: 22px; width: 50px; }
+  .diary-ocean .moon {
+    position: absolute; top: 20px; right: 20px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(220,240,255,0.95), rgba(180,210,255,0.6));
+    box-shadow: 0 0 12px rgba(180,210,255,0.4), 0 0 24px rgba(180,210,255,0.15);
+  }
+
+  /* 金色陽光 */
+  .diary-sun {
+    background: linear-gradient(160deg, #5c4a1e 0%, #473a15 40%, #2e240e 100%);
+    border: 1px solid #907030;
+  }
+  .diary-sun .diary-icon {
+    font-size: 40px; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+  .diary-sun .diary-title {
+    font-size: 13px; color: rgba(255,230,150,0.9); letter-spacing: 3px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .diary-sun .sun-orb {
+    position: absolute; top: 18px; right: 18px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,235,160,0.95), rgba(255,210,100,0.5));
+    box-shadow: 0 0 16px rgba(255,200,80,0.5), 0 0 32px rgba(255,180,60,0.2);
+    animation: sun-pulse 4s ease-in-out infinite;
+  }
+  @keyframes sun-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+  .diary-sun .rays {
+    position: absolute; top: 8px; right: 8px; width: 50px; height: 50px;
+  }
+  .diary-sun .rays::before, .diary-sun .rays::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 12px; background: rgba(255,220,100,0.25);
+    transform-origin: center; border-radius: 1px;
+  }
+  .diary-sun .rays::before { transform: translate(-50%,-50%) rotate(0deg); box-shadow: 0 0 0 0 transparent, 0 20px 0 rgba(255,220,100,0.25), 0 -20px 0 rgba(255,220,100,0.25); }
+  .diary-sun .rays::after { transform: translate(-50%,-50%) rotate(90deg); box-shadow: 0 0 0 0 transparent, 0 20px 0 rgba(255,220,100,0.25), 0 -20px 0 rgba(255,220,100,0.25); }
+
+  /* 綠色森林 */
+  .diary-forest {
+    background: linear-gradient(160deg, #1e421e 0%, #0f2d12 40%, #0a220e 100%);
+    border: 1px solid #2a7a2a;
+  }
+  .diary-forest .diary-icon {
+    font-size: 40px; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+  .diary-forest .diary-title {
+    font-size: 13px; color: rgba(160,230,160,0.9); letter-spacing: 3px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .diary-forest .tree {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 3px; height: 55px; background: linear-gradient(180deg, rgba(100,170,100,0.6), rgba(80,140,80,0.3));
+    border-radius: 2px;
+  }
+  .diary-forest .tree::before {
+    content: ''; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    width: 30px; height: 30px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(100,180,100,0.35), transparent 70%);
+  }
+  .diary-forest .tree::after {
+    content: ''; position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%);
+    width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(120,200,120,0.3), transparent 70%);
+  }
+  .diary-forest .leaf-1, .diary-forest .leaf-2, .diary-forest .leaf-3 {
+    position: absolute; width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(120,200,120,0.25);
+  }
+  .diary-forest .leaf-1 { bottom: 20px; left: 30%; }
+  .diary-forest .leaf-2 { bottom: 35px; right: 30%; }
+  .diary-forest .leaf-3 { bottom: 50px; left: 45%; }
+
+  /* 黑色星辰 */
+  .diary-star {
+    background: linear-gradient(160deg, #1e1e38 0%, #121228 40%, #0a0a1c 100%);
+    border: 1px solid #4a4a70;
+  }
+  .diary-star .diary-icon {
+    font-size: 40px; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+  .diary-star .diary-title {
+    font-size: 13px; color: rgba(200,200,255,0.9); letter-spacing: 3px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .diary-star .star-s {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,0.9); box-shadow: 0 0 6px rgba(255,255,255,0.6), 0 0 12px rgba(255,255,255,0.2);
+    animation: star-twinkle var(--dur) ease-in-out infinite;
+  }
+  @keyframes star-twinkle {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+  .diary-star .star-s.s1 { width: 3px; height: 3px; top: 22px; left: 25px; --dur: 3s; }
+  .diary-star .star-s.s2 { width: 2px; height: 2px; top: 40px; right: 35px; --dur: 4s; }
+  .diary-star .star-s.s3 { width: 2.5px; height: 2.5px; bottom: 50px; left: 30px; --dur: 2.5s; }
+  .diary-star .star-s.s4 { width: 2px; height: 2px; bottom: 30px; right: 25px; --dur: 3.5s; }
+  .diary-star .star-s.s5 { width: 1.5px; height: 1.5px; top: 60px; left: 40px; --dur: 5s; }
+  .diary-star .star-s.s6 { width: 2px; height: 2px; top: 28px; right: 55px; --dur: 2s; }
+  .diary-star .constellation {
+    position: absolute; top: 18px; left: 20px; width: 50px; height: 40px;
+  }
+  .diary-star .constellation::before, .diary-star .constellation::after {
+    content: ''; position: absolute; height: 1px; background: rgba(255,255,255,0.08);
+  }
+  .diary-star .constellation::before {
+    width: 25px; top: 5px; left: 5px; transform: rotate(-15deg);
+  }
+  .diary-star .constellation::after {
+    width: 18px; top: 18px; left: 20px; transform: rotate(30deg);
+  }
+
+  /* 日記寫作 */
+  .diary-book {
+    width: 90%; max-width: 400px; min-height: 400px;
+    border-radius: 8px; padding: 30px 25px;
+    position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    transition: all 0.5s;
+  }
+  .diary-book.ocean { background: linear-gradient(180deg, #f5f9ff, #e8f0fa); color: #1a3a5c; }
+  .diary-book.sun { background: linear-gradient(180deg, #fffaf0, #faf0d8); color: #5c4a1a; }
+  .diary-book.forest { background: linear-gradient(180deg, #f5fff5, #e8f5e8); color: #1a3c1a; }
+  .diary-book.star { background: linear-gradient(180deg, #f8f8ff, #ece8f5); color: #2a2a3e; }
+  .diary-book-inner-line {
+    position: absolute; left: 40px; top: 30px; bottom: 30px;
+    width: 1px; background: rgba(0,0,0,0.08);
+  }
+  .diary-textarea {
+    width: 100%; min-height: 280px; border: none; outline: none;
+    background: transparent; font-size: 16px; line-height: 2;
+    font-family: inherit; resize: none; padding-left: 20px;
+    color: inherit;
+  }
+  .diary-textarea::placeholder { color: rgba(0,0,0,0.25); }
+  .diary-prompt {
+    font-size: 13px; color: inherit; opacity: 0.5;
+    margin-bottom: 10px; padding-left: 20px;
+  }
+  .diary-save-btn {
+    margin-top: 20px; padding: 10px 30px; border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.2); background: rgba(0,0,0,0.05);
+    color: inherit; cursor: pointer; font-size: 14px;
+    transition: all 0.3s; align-self: center;
+  }
+  .diary-save-btn:hover { background: rgba(0,0,0,0.1); }
+  .saved-message {
+    text-align: center; margin-top: 20px; font-size: 14px;
+    color: #a0a0b0; line-height: 2;
+  }
+  .saved-time { color: #d4a574; font-size: 13px; margin-top: 8px; }
+
+  /* 角色選擇 */
+  #scene-role-select, #scene-time-machine {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #1a1a2e 0%, #0a0a14 80%);
+  }
+  .role-intro {
+    font-size: 16px; line-height: 2; color: #c0c0d0;
+    text-align: center; max-width: 340px; margin-bottom: 40px;
+  }
+  .role-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+    max-width: 340px;
+  }
+  .role-card {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 24px 16px; text-align: center;
+    cursor: pointer; transition: all 0.4s;
+  }
+  .role-card:hover {
+    background: rgba(255,255,255,0.1); transform: translateY(-4px);
+    border-color: rgba(245,230,163,0.3);
+  }
+  .role-card.selected {
+    border-color: #f5e6a3; background: rgba(245,230,163,0.1);
+    box-shadow: 0 0 20px rgba(245,230,163,0.15);
+  }
+  .role-emoji { font-size: 32px; margin-bottom: 10px; }
+  .role-name { font-size: 15px; color: #e8e6e1; font-weight: 500; }
+  .role-desc { font-size: 12px; color: #8a8a9a; margin-top: 4px; line-height: 1.4; }
+
+  .time-machine-text {
+    font-size: 17px; line-height: 2.2; color: #c8c0b0;
+    text-align: center; max-width: 360px; letter-spacing: 0.5px;
+  }
+  .time-machine-text .highlight { color: #f5e6a3; font-weight: 500; }
+  .continue-btn {
+    margin-top: 40px; padding: 12px 36px; border-radius: 24px;
+    border: 1px solid rgba(245,230,163,0.4); background: rgba(245,230,163,0.08);
+    color: #f5e6a3; cursor: pointer; font-size: 14px;
+    letter-spacing: 2px; transition: all 0.4s;
+  }
+  .continue-btn:hover {
+    background: rgba(245,230,163,0.15); transform: scale(1.05);
+  }
+
+  /* ===== 劇團排演 ===== */
+  #scene-theater {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #1a1a2e 0%, #0a0a14 80%);
+  }
+  .theater-stage {
+    position: relative; width: 90%; max-width: 420px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 30px 24px;
+    margin-bottom: 30px;
+  }
+  .theater-curtain {
+    position: absolute; top: -10px; left: 0; right: 0; height: 20px;
+    background: linear-gradient(90deg, transparent, rgba(245,230,163,0.15), transparent);
+    border-radius: 10px;
+  }
+  .theater-text {
+    font-size: 16px; line-height: 2.2; color: #c8c0b0;
+    text-align: center; letter-spacing: 0.5px;
+  }
+  .theater-text .speaker { color: #f5e6a3; font-weight: 500; }
+  .theater-text .line { margin: 16px 0; }
+  .theater-hint {
+    font-size: 13px; color: #6a6a7a; text-align: center;
+    margin-top: 20px; letter-spacing: 2px;
+  }
+
+  /* ===== 燈籠升起 ===== */
+  #scene-lantern {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 60%, #1e1e3a 0%, #0a0a14 80%);
+  }
+  .lantern-sky {
+    position: relative; width: 100%; height: 60%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lantern-glow {
+    width: 120px; height: 160px; position: relative;
+    animation: lantern-float 6s ease-in-out infinite;
+  }
+  @keyframes lantern-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  .lantern-body {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,220,140,0.4), rgba(255,200,100,0.15));
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    box-shadow: 0 0 60px rgba(255,200,80,0.3), 0 0 120px rgba(255,180,60,0.1);
+  }
+  .lantern-text {
+    font-size: 17px; line-height: 2.2; color: #c8c0b0;
+    text-align: center; max-width: 340px; margin-top: 40px;
+  }
+
+  /* ===== 碎片庫 ===== */
+  #scene-fragments {
+    flex-direction: column; align-items: center; justify-content: flex-start;
+    background: radial-gradient(ellipse at 50% 50%, #151528 0%, #080812 80%);
+    padding-top: 60px; overflow-y: auto;
+  }
+  .fragments-title {
+    font-size: 24px; color: #f5e6a3; letter-spacing: 6px;
+    margin-bottom: 40px;
+  }
+  .fragments-shelf {
+    display: flex; flex-direction: column; gap: 16px;
+    width: 90%; max-width: 400px; padding-bottom: 60px;
+  }
+  .fragment-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 20px 18px;
+    cursor: pointer; transition: all 0.4s;
+  }
+  .fragment-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(245,230,163,0.2);
+    transform: translateX(4px);
+  }
+  .fragment-date { font-size: 12px; color: #7a7a8a; margin-bottom: 8px; }
+  .fragment-preview {
+    font-size: 14px; color: #b0b0c0; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .fragment-author { font-size: 12px; color: #a09070; margin-top: 8px; }
+  .fragment-empty {
+    text-align: center; color: #6a6a7a; font-size: 14px;
+    margin-top: 40px; line-height: 2;
+  }
+
+  @media (max-width: 480px) {
+    .home-title { font-size: 32px; letter-spacing: 4px; }
+    .diary-grid, .role-grid { gap: 14px; }
+    .diary-item { width: 135px; height: 180px; }
+    .diary-book { padding: 20px 15px; }
+    .door-container { width: 160px; height: 240px; }
+    .time-machine-text { font-size: 15px; max-width: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 墨跡暈開轉場層 -->
+<div class="ink-transition" id="inkTransition">
+  <div class="ink-blot ink-blot-1" id="inkBlot1"></div>
+  <div class="ink-blot ink-blot-2" id="inkBlot2"></div>
+  <div class="ink-blot ink-blot-3" id="inkBlot3"></div>
+</div>
+
+<!-- 首页 -->
+<div class="scene active" id="scene-home">
+  <h1 class="home-title">燈籠心流</h1>
+  <p class="home-subtitle">獻給所有在聚光燈世界裡感到撕裂的人。</p>
+  <button class="enter-btn" onclick="goToSceneDoor()">開啟世界之門 ➡️</button>
+</div>
+
+<!-- 門與詩句 -->
+<div class="scene" id="scene-door">
+  <div class="door-container" id="doorContainer">
+    <div class="door-frame">
+      <div class="door-light"></div>
+    </div>
+    <div class="door-panel" id="doorPanel">
+      <div class="door-knob"></div>
+    </div>
+  </div>
+  <div class="poem-text" id="poemText">
+    <div>「看不見的，是不是等於不存在？</div>
+    <div>我看不見你，卻依然感到溫暖。」</div>
+    <div class="poem-author">——幾米</div>
+  </div>
+  <div class="click-hint" id="clickHint">點擊畫面繼續</div>
+</div>
+
+<!-- 選擇與路徑 -->
+<div class="scene" id="scene-choose">
+  <div class="choose-question" id="chooseQuestion"></div>
+  <div class="path-poem" id="pathPoem">
+    <div>一條路意味著一個選擇，</div>
+    <div>一個選擇意味著一個答案。</div>
+    <div style="margin-top:10px;">你要走哪條路？</div>
+  </div>
+  <div class="paths-container" id="pathsContainer" style="display:none;">
+    <div class="path-left" onclick="choosePath('left')">
+      <svg class="path-svg" viewBox="0 0 140 180">
+        <path d="M 120 180 Q 80 140 70 100 Q 60 60 30 30" stroke="rgba(180,160,100,0.5)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+        <circle cx="30" cy="30" r="5" fill="rgba(245,230,163,0.3)"/>
+      </svg>
+      <div class="path-label">左邊</div>
+    </div>
+    <div class="path-right" onclick="choosePath('right')">
+      <svg class="path-svg" viewBox="0 0 140 180">
+        <path d="M 20 180 Q 60 140 70 100 Q 80 60 110 30" stroke="rgba(180,160,100,0.5)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+        <circle cx="110" cy="30" r="5" fill="rgba(245,230,163,0.3)"/>
+      </svg>
+      <div class="path-label">右邊</div>
+    </div>
+  </div>
+</div>
+
+<!-- 記錄路徑 - 日記本選擇 -->
+<div class="scene" id="scene-diary-select">
+  <div class="diary-intro" id="diaryIntro"></div>
+  <div class="diary-grid">
+    <div class="diary-item diary-ocean" onclick="selectDiary('ocean', this)">
+      <div class="diary-border"></div>
+      <div class="diary-corner tl"></div><div class="diary-corner tr"></div>
+      <div class="diary-corner bl"></div><div class="diary-corner br"></div>
+      <div class="moon"></div><div class="wave"></div>
+      <div class="diary-cover">
+        <div class="diary-icon">🌙</div>
+        <div class="diary-title">藍色海洋</div>
+      </div>
+    </div>
+    <div class="diary-item diary-sun" onclick="selectDiary('sun', this)">
+      <div class="diary-border"></div>
+      <div class="diary-corner tl"></div><div class="diary-corner tr"></div>
+      <div class="diary-corner bl"></div><div class="diary-corner br"></div>
+      <div class="sun-orb"></div><div class="rays"></div>
+      <div class="diary-cover">
+        <div class="diary-icon">☀️</div>
+        <div class="diary-title">金色陽光</div>
+      </div>
+    </div>
+    <div class="diary-item diary-forest" onclick="selectDiary('forest', this)">
+      <div class="diary-border"></div>
+      <div class="diary-corner tl"></div><div class="diary-corner tr"></div>
+      <div class="diary-corner bl"></div><div class="diary-corner br"></div>
+      <div class="tree"></div><div class="leaf-1"></div><div class="leaf-2"></div><div class="leaf-3"></div>
+      <div class="diary-cover">
+        <div class="diary-icon">🌿</div>
+        <div class="diary-title">綠色森林</div>
+      </div>
+    </div>
+    <div class="diary-item diary-star" onclick="selectDiary('star', this)">
+      <div class="diary-border"></div>
+      <div class="diary-corner tl"></div><div class="diary-corner tr"></div>
+      <div class="diary-corner bl"></div><div class="diary-corner br"></div>
+      <div class="star-s s1"></div><div class="star-s s2"></div><div class="star-s s3"></div>
+      <div class="star-s s4"></div><div class="star-s s5"></div><div class="star-s s6"></div>
+      <div class="constellation"></div>
+      <div class="diary-cover">
+        <div class="diary-icon">✨</div>
+        <div class="diary-title">黑色星辰</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日記寫作 -->
+<div class="scene" id="scene-diary-write">
+  <div class="diary-book" id="diaryBook">
+    <div class="diary-book-inner-line"></div>
+    <div class="diary-prompt">在所有選擇中，我選擇了它，因為……</div>
+    <textarea class="diary-textarea" id="diaryInput" placeholder="寫下你的第一篇日記..."></textarea>
+    <button class="diary-save-btn" onclick="saveDiary()">保存</button>
+  </div>
+</div>
+
+<!-- 保存成功 -->
+<div class="scene" id="scene-diary-save">
+  <div class="saved-message">
+    <div style="font-size:20px;color:#f5e6a3;margin-bottom:16px;">第一篇日記誕生了！</div>
+    <div>記錄時間是 <span id="savedTime" class="saved-time"></span></div>
+    <div style="margin-top:12px;">未來的某一天，也許它會被你喚醒。</div>
+  </div>
+</div>
+
+<!-- 記住路徑 - 角色選擇 -->
+<div class="scene" id="scene-role-select">
+  <div class="role-intro" id="roleIntro"></div>
+  <div class="role-grid">
+    <div class="role-card" onclick="selectRole('bard', this)">
+      <div class="role-emoji">☁️</div>
+      <div class="role-name">吟遊詩人</div>
+      <div class="role-desc">愛發呆和做白日夢<br>被嘲笑的夢想家</div>
+    </div>
+    <div class="role-card" onclick="selectRole('mathematician', this)">
+      <div class="role-emoji">∞</div>
+      <div class="role-name">數學家</div>
+      <div class="role-desc">把一切數字化<br>尋找世界的公式</div>
+    </div>
+    <div class="role-card" onclick="selectRole('musician', this)">
+      <div class="role-emoji">♪</div>
+      <div class="role-name">音樂家</div>
+      <div class="role-desc">天生比別人慢半拍<br>在節奏之外聽見</div>
+    </div>
+    <div class="role-card" onclick="selectRole('outsider', this)">
+      <div class="role-emoji">🎭</div>
+      <div class="role-name">外向的孤獨症</div>
+      <div class="role-desc">微笑面具下的深海<br>人群中的獨行者</div>
+    </div>
+  </div>
+</div>
+
+<!-- 時光機敘事 -->
+<div class="scene" id="scene-time-machine">
+  <div class="time-machine-text" id="timeMachineText"></div>
+  <button class="continue-btn" id="continueBtn" style="display:none;" onclick="goToTheater()">繼續排演</button>
+</div>
+
+<!-- 劇團排演 -->
+<div class="scene" id="scene-theater">
+  <div class="theater-stage" id="theaterStage">
+    <div class="theater-curtain"></div>
+    <div class="theater-text" id="theaterText"></div>
+  </div>
+  <div class="theater-hint" id="theaterHint">點擊畫面繼續</div>
+  <button class="continue-btn" id="theaterContinueBtn" style="display:none;" onclick="goToLantern()">燈籠升起</button>
+</div>
+
+<!-- 燈籠升起 -->
+<div class="scene" id="scene-lantern">
+  <div class="lantern-sky">
+    <div class="lantern-glow">
+      <div class="lantern-body"></div>
+    </div>
+  </div>
+  <div class="lantern-text" id="lanternText"></div>
+  <button class="continue-btn" id="lanternContinueBtn" style="display:none;" onclick="goToFragments()">走進碎片庫</button>
+</div>
+
+<!-- 碎片庫 -->
+<div class="scene" id="scene-fragments">
+  <div class="fragments-title">記憶碎片</div>
+  <div class="fragments-shelf" id="fragmentsShelf"></div>
+</div>
+
+<script>
+var currentScene = 'home';
+var chosenPath = null;
+var chosenDiary = null;
+var chosenRole = null;
+var diaryContent = '';
+var pathMapping = {};
+
+// ===== 墨跡暈開轉場 =====
+function inkTransition(callback) {
+  var ink = document.getElementById('inkTransition');
+  var blot1 = document.getElementById('inkBlot1');
+  var blot2 = document.getElementById('inkBlot2');
+  var blot3 = document.getElementById('inkBlot3');
+  
+  ink.classList.add('active');
+  blot1.classList.add('expand');
+  blot2.classList.add('expand');
+  blot3.classList.add('expand');
+  
+  setTimeout(function() {
+    if (callback) callback();
+    
+    setTimeout(function() {
+      blot1.classList.remove('expand');
+      blot2.classList.remove('expand');
+      blot3.classList.remove('expand');
+      ink.classList.remove('active');
+    }, 1500);
+  }, 2500);
+}
+
+function goToScene(sceneName) {
+  var scenes = document.querySelectorAll('.scene');
+  for (var i = 0; i < scenes.length; i++) {
+    scenes[i].classList.remove('active', 'fade-in');
+  }
+  var target = document.getElementById('scene-' + sceneName);
+  if (target) {
+    target.classList.add('active');
+    setTimeout(function() { target.classList.add('fade-in'); }, 50);
+  }
+  currentScene = sceneName;
+}
+
+function goToSceneDoor() {
+  inkTransition(function() {
+    goToScene('door');
+    setTimeout(function() {
+      document.getElementById('doorPanel').classList.add('open');
+    }, 800);
+    // 門打開後再顯示文字
+    setTimeout(function() {
+      document.getElementById('poemText').classList.add('visible');
+    }, 3800);
+  });
+}
+
+// 點擊門場景 - 墨跡暈開過渡到選擇場景
+var doorEl = document.getElementById('scene-door');
+doorEl.addEventListener('click', function() {
+  if (currentScene !== 'door') return;
+  var poem = document.getElementById('poemText');
+  var doorPanel = document.getElementById('doorPanel');
+  var hint = document.getElementById('clickHint');
+  poem.classList.add('fade-out');
+  hint.classList.add('fade-out');
+  doorPanel.classList.add('fade-out');
+  
+  setTimeout(function() {
+    inkTransition(function() {
+      goToChoose();
+    });
+  }, 1500);
+});
+
+function goToChoose() {
+  goToScene('choose');
+  revealText('chooseQuestion', '要記住，還是要記錄？', function() {
+    setTimeout(function() {
+      document.getElementById('pathPoem').classList.add('visible');
+      document.getElementById('pathsContainer').style.display = 'block';
+    }, 600);
+  });
+}
+
+function initPathMapping() {
+  var isLeftRecord = Math.random() > 0.5;
+  pathMapping = {
+    left: isLeftRecord ? 'record' : 'remember',
+    right: isLeftRecord ? 'remember' : 'record'
+  };
+}
+
+// 文字逐漸浮現效果 - 純 JS setInterval 版本，任何 webview 都生效
+function revealText(elementId, text, callback, delay) {
+  delay = delay || 3000;
+  var el = document.getElementById(elementId);
+  // 先清空並隱藏
+  el.innerHTML = '';
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  // 塞入文字（此時仍然不可見）
+  el.innerHTML = text.replace(/\n/g, '<br>');
+  
+  var steps = 60;
+  var interval = delay / steps;
+  var current = 0;
+  
+  var timer = setInterval(function() {
+    current++;
+    var progress = current / steps;
+    // ease-out
+    var eased = 1 - Math.pow(1 - progress, 3);
+    el.style.opacity = eased;
+    el.style.transform = 'translateY(' + (20 * (1 - eased)) + 'px)';
+    
+    if (current >= steps) {
+      clearInterval(timer);
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+      if (callback) callback();
+    }
+  }, interval);
+}
+
+function choosePath(direction) {
+  chosenPath = pathMapping[direction];
+  if (chosenPath === 'record') {
+    inkTransition(goToDiarySelect);
+  } else {
+    inkTransition(goToRoleSelect);
+  }
+}
+
+function goToDiarySelect() {
+  goToScene('diary-select');
+  var text = '這個世界的旅程即將開始，你得到了一件禮物：一本日記本。\n\n它將陪伴你走過這條漫漫長路。\n\n現在請你選一本自己最喜歡的日記本，開始你的記錄生涯。';
+  revealText('diaryIntro', text, null, 2500);
+}
+
+function selectDiary(type, el) {
+  chosenDiary = type;
+  var items = document.querySelectorAll('.diary-item');
+  for (var i = 0; i < items.length; i++) items[i].classList.remove('selected');
+  el.classList.add('selected');
+  setTimeout(function() { goToDiaryWrite(); }, 600);
+}
+
+function goToDiaryWrite() {
+  inkTransition(function() {
+    goToScene('diary-write');
+    var book = document.getElementById('diaryBook');
+    book.className = 'diary-book ' + chosenDiary;
+    setTimeout(function() {
+      document.getElementById('diaryInput').focus();
+    }, 600);
+  });
+}
+
+function saveDiary() {
+  diaryContent = document.getElementById('diaryInput').value;
+  if (!diaryContent.trim()) { diaryContent = '（一篇空白的日記）'; }
+  goToDiarySave();
+}
+
+function goToDiarySave() {
+  goToScene('diary-save');
+  var now = new Date();
+  var timeStr = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate();
+  document.getElementById('savedTime').textContent = timeStr;
+  var records = JSON.parse(localStorage.getItem('lantern_diary') || '[]');
+  records.push({
+    diary: chosenDiary,
+    content: diaryContent,
+    time: now.toISOString(),
+    date: timeStr
+  });
+  localStorage.setItem('lantern_diary', JSON.stringify(records));
+}
+
+function goToRoleSelect() {
+  goToScene('role-select');
+  var text = '這個世界的旅程即將開始。\n\n你得到了一件禮物：一個時光機。\n\n它能帶你回到從前，再走一遍當時那條路。\n\n但這次你要換個身份。';
+  revealText('roleIntro', text, null, 2500);
+}
+
+function selectRole(role, el) {
+  chosenRole = role;
+  var cards = document.querySelectorAll('.role-card');
+  for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
+  el.classList.add('selected');
+  setTimeout(function() { goToTimeMachine(); }, 800);
+}
+
+function goToTimeMachine() {
+  inkTransition(function() {
+    goToScene('time-machine');
+    var roleNames = {
+      bard: '吟遊詩人',
+      mathematician: '數學家',
+      musician: '音樂家',
+      outsider: '獨行者'
+    };
+    var text = '記得那年暑假，我們幾個同學為了即將到來的學校演出，排練了一齣戲劇。\n\n那時很投入，也很快樂，雖然沒有獲得好的名次。\n\n現在，借著時光機，我又回到了那一年的暑假。\n\n現在，我有機會以' + roleNames[chosenRole] + '的身份，\n重新排演這齣戲了。';
+    revealText('timeMachineText', text, function() {
+      document.getElementById('continueBtn').style.display = '';
+    });
+  });
+}
+
+function goToTheater() {
+  inkTransition(function() {
+    goToScene('theater');
+    var roleNames = {
+      bard: '吟遊詩人',
+      mathematician: '數學家',
+      musician: '音樂家',
+      outsider: '獨行者'
+    };
+    // 劇團排演內容 —— 這裡會接入語料庫碎片
+    var script = [
+      { speaker: '旁白', line: '燈光亮起，舞台空無一人。' },
+      { speaker: roleNames[chosenRole], line: '（走上舞台，深吸一口氣）' },
+      { speaker: '心裡的聲音', line: '這句話，好像有人曾經對我說過……' },
+      { speaker: '旁白', line: '她念出第一句台詞。' }
+    ];
+    showTheaterScript(script);
+  });
+}
+
+function showTheaterScript(script) {
+  var el = document.getElementById('theaterText');
+  var idx = 0;
+  function showNextLine() {
+    if (idx >= script.length) {
+      document.getElementById('theaterHint').style.display = 'none';
+      document.getElementById('theaterContinueBtn').style.display = '';
+      return;
+    }
+    var line = script[idx];
+    var div = document.createElement('div');
+    div.className = 'line';
+    div.innerHTML = '<span class="speaker">' + line.speaker + '</span>：' + line.line;
+    div.style.opacity = '0';
+    div.style.transform = 'translateY(10px)';
+    div.style.transition = 'opacity 1.5s ease, transform 1.5s ease';
+    el.appendChild(div);
+    setTimeout(function() {
+      div.style.opacity = '1';
+      div.style.transform = 'translateY(0)';
+    }, 50);
+    idx++;
+    document.getElementById('theaterHint').onclick = showNextLine;
+  }
+  // 第一次點擊開始
+  document.getElementById('theaterHint').onclick = showNextLine;
+}
+
+function goToLantern() {
+  inkTransition(function() {
+    goToScene('lantern');
+    var text = '燈籠緩緩升上天空。\n\n它帶著所有的記錄與記住，\n飛向看不見的地方。\n\n也許有一天，\n會有人抬頭看見它，\n想起這個故事。';
+    revealText('lanternText', text, function() {
+      document.getElementById('lanternContinueBtn').style.display = '';
+    }, 3500);
+  });
+}
+
+function goToFragments() {
+  inkTransition(function() {
+    goToScene('fragments');
+    renderFragments();
+  });
+}
+
+function renderFragments() {
+  var shelf = document.getElementById('fragmentsShelf');
+  shelf.innerHTML = '';
+  
+  // 讀取日記碎片
+  var diaries = JSON.parse(localStorage.getItem('lantern_diary') || '[]');
+  // 讀取語料庫碎片（預留接口）
+  var corpus = JSON.parse(localStorage.getItem('lantern_corpus') || '[]');
+  
+  var allFragments = [];
+  diaries.forEach(function(d, i) {
+    allFragments.push({
+      type: 'diary',
+      date: d.date,
+      preview: d.content.substring(0, 60) + (d.content.length > 60 ? '……' : ''),
+      author: '你',
+      data: d
+    });
+  });
+  corpus.forEach(function(c, i) {
+    allFragments.push({
+      type: 'corpus',
+      date: c.date || '某天',
+      preview: c.content.substring(0, 60) + (c.content.length > 60 ? '……' : ''),
+      author: c.author || '未知',
+      data: c
+    });
+  });
+  
+  // 示範碎片（首次訪問時顯示）
+  if (allFragments.length === 0) {
+    shelf.innerHTML = '<div class="fragment-empty"><div>這裡還沒有碎片</div><div>當你開始記錄，它們會慢慢出現</div></div>';
+    return;
+  }
+  
+  allFragments.forEach(function(f) {
+    var card = document.createElement('div');
+    card.className = 'fragment-card';
+    card.innerHTML = 
+      '<div class="fragment-date">' + f.date + ' · ' + (f.type === 'diary' ? '日記' : '語料') + '</div>' +
+      '<div class="fragment-preview">' + f.preview + '</div>' +
+      '<div class="fragment-author">—— ' + f.author + '</div>';
+    card.onclick = function() { showFragmentDetail(f); };
+    shelf.appendChild(card);
+  });
+}
+
+function showFragmentDetail(fragment) {
+  alert(fragment.data.content || fragment.preview);
+}
+
+initPathMapping();
+</script>
+</body>
+</html>
